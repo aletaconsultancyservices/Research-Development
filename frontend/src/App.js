@@ -4,6 +4,7 @@ import PatientManagement from './components/PatientManagement';
 import DoctorManagement from './components/DoctorManagement';
 import AppointmentManagement from './components/AppointmentManagement';
 import Dashboard from './components/Dashboard';
+import AdminManagement from './components/AdminManagement';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -30,6 +31,10 @@ function App() {
               className={`nav-btn ${activeTab === 'appointments' ? 'active' : ''}`}
               onClick={() => setActiveTab('appointments')}
             >Appointments</button></li>
+            <li><button 
+              className={`nav-btn ${activeTab === 'admin' ? 'active' : ''}`}
+              onClick={() => setActiveTab('admin')}
+            >Admin</button></li>
           </ul>
         </div>
       </nav>
@@ -39,6 +44,7 @@ function App() {
         {activeTab === 'patients' && <PatientManagement />}
         {activeTab === 'doctors' && <DoctorManagement />}
         {activeTab === 'appointments' && <AppointmentManagement />}
+        {activeTab === 'admin' && <AdminManagement />}
       </div>
     </div>
   );
