@@ -6,6 +6,8 @@ import AppointmentManagement from './components/AppointmentManagement';
 import Dashboard from './components/Dashboard';
 import AdminManagement from './components/AdminManagement';
 import StaffManagement from './components/StaffManagement';
+import ReportsAnalytics from './components/ReportsAnalytics';
+import PatientMedicalRecords from './components/PatientMedicalRecords';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -33,13 +35,21 @@ function App() {
               onClick={() => setActiveTab('appointments')}
             >Appointments</button></li>
             <li><button 
-              className={`nav-btn ${activeTab === 'admin' ? 'active' : ''}`}
-              onClick={() => setActiveTab('admin')}
-            >Admin</button></li>
-            <li><button 
               className={`nav-btn ${activeTab === 'staff' ? 'active' : ''}`}
               onClick={() => setActiveTab('staff')}
             >Staff</button></li>
+            <li><button 
+              className={`nav-btn ${activeTab === 'records' ? 'active' : ''}`}
+              onClick={() => setActiveTab('records')}
+            >Medical Records</button></li>
+            <li><button 
+              className={`nav-btn ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reports')}
+            >Reports</button></li>
+            <li><button 
+              className={`nav-btn ${activeTab === 'admin' ? 'active' : ''}`}
+              onClick={() => setActiveTab('admin')}
+            >Admin</button></li>
           </ul>
         </div>
       </nav>
@@ -50,6 +60,8 @@ function App() {
         {activeTab === 'doctors' && <DoctorManagement />}
         {activeTab === 'appointments' && <AppointmentManagement />}
         {activeTab === 'staff' && <StaffManagement />}
+        {activeTab === 'records' && <PatientMedicalRecords />}
+        {activeTab === 'reports' && <ReportsAnalytics />}
         {activeTab === 'admin' && <AdminManagement />}
       </div>
     </div>
