@@ -639,3 +639,30 @@ body {
     font-size: 0.75rem;
   }
 }
+/* Application Footer Styling */
+.app-footer {
+  background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+  color: white;
+  padding: 2rem 0;
+  margin-top: 4rem;
+  text-align: center;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.footer-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.footer-subtext {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  font-style: italic;
+}
