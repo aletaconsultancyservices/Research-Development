@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
+/**
+ * Dashboard Component
+ * Displays key performance indicators and system statistics
+ * Features:
+ * - Real-time statistics from all core modules
+ * - Patient, Doctor, Appointment, and Staff metrics
+ * - Recent appointments display
+ * - Error handling and loading states
+ * - Responsive KPI card layout
+ */
 const Dashboard = () => {
   const [stats, setStats] = useState({
     totalPatients: 0,
@@ -18,13 +28,14 @@ const Dashboard = () => {
   });
   const [recentAppointments, setRecentAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  // Memoized fetch function to prevent unnecessary re-renders
+  const fetchStats = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const [patients, doctors, appointments, staff] = await Promise.all([
         api.get('patients/'),
         api.get('doctors/'),
@@ -57,16 +68,24 @@ const Dashboard = () => {
       setRecentAppointments(recent);
     } catch (error) {
       console.error('Error fetching stats:', error);
+      setError('Failed to load dashboard statistics. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  if (loading) return <div className="card"><p>Loading dashboard...</p></div>;
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  if (loading) return <div className="card"><p>⏳ Loading dashboard...</p></div>;
+
+  if (error) return <div className="card alert-error"><p>⚠️ {error}</p></div>;
 
   return (
     <div>
       <div className="card">
+        <h2>📊 Dashboard Overview</h2>
         <h2 className="card-title">📊 Healthcare Management Dashboard</h2>
         <p>Real-time overview of hospital operations and key metrics</p>
       </div>
