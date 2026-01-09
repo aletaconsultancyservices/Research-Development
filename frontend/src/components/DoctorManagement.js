@@ -1,12 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
+/**
+ * DoctorManagement Component
+ * Manages doctor profiles and availability status
+ * Features:
+ * - Doctor CRUD operations
+ * - Specialization tracking
+ * - License number management
+ * - Experience tracking
+ * - Availability status
+ */
 const DoctorManagement = () => {
   const [doctors, setDoctors] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -19,21 +30,30 @@ const DoctorManagement = () => {
     is_available: true,
   });
 
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
-
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get('doctors/');
       setDoctors(response.data);
+      console.log(`✅ Loaded ${response.data.length} doctors`);
     } catch (error) {
-      setMessage('Error fetching doctors');
+      setMessage('❌ Error fetching doctors');
+      console.error('Doctor fetch error:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDoctors();
+  }, [fetchDoctors]);
+
+  // Filter doctors based on search term
+  const filteredDoctors = doctors.filter(doctor =>
+    `${doctor.first_name} ${doctor.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doctor.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -174,8 +194,20 @@ const DoctorManagement = () => {
       </div>
 
       <div className="card">
+        <div className="management-header">
+          <h2>👨‍⚕️ Doctor Directory ({filteredDoctors.length})</h2>
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="🔍 Search by name, specialty, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+        </div>
         <div className="table-container">
-          {loading ? <p>Loading...</p> : (
+          {loading ? <p>⏳ Loading...</p> : (
             <table className="data-table">
               <thead>
                 <tr>
@@ -190,12 +222,13 @@ const DoctorManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {doctors.map(doctor => (
-                  <tr key={doctor.doctor_id}>
-                    <td>#{doctor.doctor_id}</td>
-                    <td>Dr. {doctor.first_name} {doctor.last_name}</td>
-                    <td>{doctor.specialization}</td>
-                    <td>{doctor.email}</td>
+                {filteredDoctors.length > 0 ? (
+                  filteredDoctors.map(doctor => (
+                    <tr key={doctor.doctor_id}>
+                      <td>#{doctor.doctor_id}</td>
+                      <td>Dr. {doctor.first_name} {doctor.last_name}</td>
+                      <td>{doctor.specialization}</td>
+                      <td>{doctor.email}</td>
                     <td>{doctor.phone}</td>
                     <td>{doctor.experience_years} years</td>
                     <td>
@@ -208,7 +241,10 @@ const DoctorManagement = () => {
                       <button className="btn btn-danger" onClick={() => handleDelete(doctor.doctor_id)}>Delete</button>
                     </td>
                   </tr>
-                ))}
+                  ))
+                ) : (
+                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>📭 No doctors found</td></tr>
+                )}
               </tbody>
             </table>
           )}

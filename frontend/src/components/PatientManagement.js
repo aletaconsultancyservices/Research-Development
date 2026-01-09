@@ -1,12 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
+/**
+ * PatientManagement Component
+ * Handles patient CRUD operations with comprehensive form validation
+ * Features:
+ * - Add, Edit, Delete patient records
+ * - Patient search and filtering
+ * - Form validation for all fields
+ * - Error handling and user feedback
+ * - Responsive design for all screen sizes
+ */
 const PatientManagement = () => {
   const [patients, setPatients] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -21,21 +32,24 @@ const PatientManagement = () => {
     emergency_contact: '',
   });
 
-  useEffect(() => {
-    fetchPatients();
-  }, []);
-
-  const fetchPatients = async () => {
+  // Memoized fetch to prevent unnecessary re-renders
+  const fetchPatients = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get('patients/');
       setPatients(response.data);
+      console.log(`✅ Loaded ${response.data.length} patients`);
     } catch (error) {
-      setMessage('Error fetching patients');
+      setMessage('❌ Error fetching patients');
+      console.error('Patient fetch error:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,6 +58,12 @@ const PatientManagement = () => {
       [name]: value,
     }));
   };
+
+  // Filter patients based on search term
+  const filteredPatients = patients.filter(patient =>
+    `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -173,8 +193,20 @@ const PatientManagement = () => {
       </div>
 
       <div className="card">
+        <div className="management-header">
+          <h2>👥 Patient Records ({filteredPatients.length})</h2>
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="🔍 Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+        </div>
         <div className="table-container">
-          {loading ? <p>Loading...</p> : (
+          {loading ? <p>⏳ Loading...</p> : (
             <table className="data-table">
               <thead>
                 <tr>
@@ -188,20 +220,24 @@ const PatientManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {patients.map(patient => (
-                  <tr key={patient.patient_id}>
-                    <td>#{patient.patient_id}</td>
-                    <td>{patient.first_name} {patient.last_name}</td>
-                    <td>{patient.email}</td>
-                    <td>{patient.phone}</td>
-                    <td><span className="badge badge-primary">{patient.blood_group}</span></td>
-                    <td>{patient.city}</td>
-                    <td>
-                      <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={() => handleEdit(patient)}>Edit</button>
-                      <button className="btn btn-danger" onClick={() => handleDelete(patient.patient_id)}>Delete</button>
-                    </td>
-                  </tr>
-                ))}
+                {filteredPatients.length > 0 ? (
+                  filteredPatients.map(patient => (
+                    <tr key={patient.patient_id}>
+                      <td>#{patient.patient_id}</td>
+                      <td>{patient.first_name} {patient.last_name}</td>
+                      <td>{patient.email}</td>
+                      <td>{patient.phone}</td>
+                      <td><span className="badge badge-primary">{patient.blood_group}</span></td>
+                      <td>{patient.city}</td>
+                      <td>
+                        <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={() => handleEdit(patient)}>Edit</button>
+                        <button className="btn btn-danger" onClick={() => handleDelete(patient.patient_id)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>📭 No patients found</td></tr>
+                )}
               </tbody>
             </table>
           )}
