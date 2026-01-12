@@ -1,4 +1,4 @@
-# Changelog - January 8, 2026
+        # Changelog - January 8, 2026
 
 ## Version 2.1.0 - API & Dashboard Enhancements
 

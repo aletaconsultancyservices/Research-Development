@@ -1,13 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
+/**
+ * PatientMedicalRecords Component
+ * Comprehensive patient medical history and record management system
+ * Features:
+ * - Patient search and selection
+ * - Medical history tracking with detailed records
+ * - Add new medical records with validation
+ * - Filter records by date range
+ * - Export medical history functionality
+ * - Status tracking (Ongoing/Completed)
+ * - Provider assignment and medication tracking
+ */
 const PatientMedicalRecords = () => {
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [medicalHistory, setMedicalHistory] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showAddRecord, setShowAddRecord] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [message, setMessage] = useState('');
   const [newRecord, setNewRecord] = useState({
     date: new Date().toISOString().split('T')[0],
     diagnosis: '',
@@ -15,33 +30,38 @@ const PatientMedicalRecords = () => {
     medications: '',
     notes: '',
     provider: '',
+    status: 'Ongoing',
   });
 
-  useEffect(() => {
-    fetchPatients();
-  }, []);
-
-  const fetchPatients = async () => {
+  const fetchPatients = useCallback(async () => {
     try {
       const response = await api.get('patients/');
       setPatients(response.data);
+      console.log(`✅ Loaded ${response.data.length} patients for medical records`);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching patients:', error);
+      console.error('❌ Error fetching patients:', error);
+      setMessage('Failed to load patients');
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
 
   const handleSelectPatient = (patient) => {
     setSelectedPatient(patient);
     setShowAddRecord(false);
     // Generate mock medical history
     setMedicalHistory(generateMedicalHistory(patient));
+    console.log(`📋 Selected patient: ${patient.first_name} ${patient.last_name}`);
   };
 
   const generateMedicalHistory = (patient) => {
-    const conditions = ['Hypertension', 'Diabetes Type 2', 'Asthma', 'GERD', 'Arthritis', 'Migraine'];
-    const treatments = ['Medication', 'Physical Therapy', 'Surgery', 'Lifestyle Changes', 'Monitoring'];
+    const conditions = ['Hypertension', 'Diabetes Type 2', 'Asthma', 'GERD', 'Arthritis', 'Migraine', 'Sleep Apnea', 'Obesity'];
+    const treatments = ['Medication', 'Physical Therapy', 'Surgery', 'Lifestyle Changes', 'Monitoring', 'Dietary Management'];
+    const providers = ['Dr. Smith', 'Dr. Johnson', 'Dr. Williams', 'Dr. Brown', 'Dr. Davis', 'Dr. Miller'];
     
     return [
       {
@@ -50,7 +70,8 @@ const PatientMedicalRecords = () => {
         diagnosis: conditions[Math.floor(Math.random() * conditions.length)],
         treatment: treatments[Math.floor(Math.random() * treatments.length)],
         medications: 'Lisinopril 10mg daily, Metformin 500mg twice daily',
-        provider: 'Dr. Smith',
+        provider: providers[Math.floor(Math.random() * providers.length)],
+        notes: 'Patient showing good compliance with treatment plan. Blood pressure stable.',
         status: 'Ongoing',
       },
       {
@@ -59,7 +80,8 @@ const PatientMedicalRecords = () => {
         diagnosis: conditions[Math.floor(Math.random() * conditions.length)],
         treatment: treatments[Math.floor(Math.random() * treatments.length)],
         medications: 'Ibuprofen 400mg as needed',
-        provider: 'Dr. Johnson',
+        provider: providers[Math.floor(Math.random() * providers.length)],
+        notes: 'Acute episode managed successfully. Follow-up required in 2 weeks.',
         status: 'Completed',
       },
       {
@@ -68,20 +90,43 @@ const PatientMedicalRecords = () => {
         diagnosis: conditions[Math.floor(Math.random() * conditions.length)],
         treatment: treatments[Math.floor(Math.random() * treatments.length)],
         medications: 'Albuterol inhaler as needed',
-        provider: 'Dr. Williams',
+        provider: providers[Math.floor(Math.random() * providers.length)],
+        notes: 'Preventive care visit. Patient advised to maintain regular exercise.',
         status: 'Completed',
       },
     ];
   };
 
+  // Filter patients by search term
+  const filteredPatients = patients.filter(patient =>
+    `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(patientSearchTerm.toLowerCase()) ||
+    patient.email.toLowerCase().includes(patientSearchTerm.toLowerCase())
+  );
+
+  // Filter medical history by status
+  const filteredHistory = medicalHistory.filter(record => {
+    if (filterStatus === 'all') return true;
+    return record.status.toLowerCase() === filterStatus.toLowerCase();
+  });
+
   const handleAddRecord = () => {
-    if (!selectedPatient) return;
+    if (!selectedPatient) {
+      setMessage('⚠️ Please select a patient first');
+      return;
+    }
+    
+    if (!newRecord.diagnosis || !newRecord.treatment || !newRecord.provider) {
+      setMessage('⚠️ Please fill in all required fields');
+      return;
+    }
+
     const record = {
       id: Date.now(),
       ...newRecord,
-      status: 'Ongoing',
     };
     setMedicalHistory([record, ...medicalHistory]);
+    setMessage(`✅ Medical record added successfully for ${selectedPatient.first_name}`);
+    setTimeout(() => setMessage(''), 3000);
     setNewRecord({
       date: new Date().toISOString().split('T')[0],
       diagnosis: '',
@@ -89,16 +134,35 @@ const PatientMedicalRecords = () => {
       medications: '',
       notes: '',
       provider: '',
+      status: 'Ongoing',
     });
     setShowAddRecord(false);
   };
 
-  const filteredPatients = patients.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.email && p.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const handleDeleteRecord = (recordId) => {
+    setMedicalHistory(medicalHistory.filter(record => record.id !== recordId));
+    setMessage('✅ Medical record deleted');
+    setTimeout(() => setMessage(''), 3000);
+  };
 
-  if (loading) return <div className="card"><p>Loading patient records...</p></div>;
+  const exportRecords = () => {
+    if (!selectedPatient) {
+      setMessage('⚠️ Please select a patient first');
+      return;
+    }
+    
+    const dataStr = JSON.stringify(medicalHistory, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${selectedPatient.first_name}_${selectedPatient.last_name}_medical_records.json`;
+    link.click();
+    setMessage('✅ Medical records exported successfully');
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  if (loading) return <div className="card"><p>⏳ Loading medical records system...</p></div>;
 
   return (
     <div>
@@ -107,38 +171,51 @@ const PatientMedicalRecords = () => {
         <p>Comprehensive patient medical history and treatment documentation</p>
       </div>
 
+      {message && (
+        <div style={{
+          padding: '12px 16px',
+          marginBottom: '20px',
+          backgroundColor: message.includes('✅') ? '#d4edda' : '#f8d7da',
+          color: message.includes('✅') ? '#155724' : '#856404',
+          borderRadius: '6px',
+          borderLeft: `4px solid ${message.includes('✅') ? '#28a745' : '#ffc107'}`
+        }}>
+          {message}
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '20px' }}>
         {/* Patient List */}
         <div>
           <div className="card">
-            <h3 className="card-title">Patients</h3>
+            <h3 className="card-title">👥 Patients ({filteredPatients.length})</h3>
             <input
               type="text"
-              placeholder="Search patients..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="🔍 Search patients..."
+              value={patientSearchTerm}
+              onChange={(e) => setPatientSearchTerm(e.target.value)}
               className="search-input"
               style={{ marginBottom: '15px' }}
             />
             <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
               {filteredPatients.length === 0 ? (
-                <p style={{ color: '#999', textAlign: 'center' }}>No patients found</p>
+                <p style={{ color: '#999', textAlign: 'center' }}>📭 No patients found</p>
               ) : (
                 filteredPatients.map(patient => (
                   <div
-                    key={patient.id}
+                    key={patient.patient_id}
                     onClick={() => handleSelectPatient(patient)}
                     style={{
                       padding: '12px',
                       marginBottom: '8px',
                       borderRadius: '6px',
                       cursor: 'pointer',
-                      backgroundColor: selectedPatient?.id === patient.id ? '#e8f4ff' : '#f9f9f9',
-                      borderLeft: selectedPatient?.id === patient.id ? '4px solid #00b4db' : '4px solid transparent',
+                      backgroundColor: selectedPatient?.patient_id === patient.patient_id ? '#e8f4ff' : '#f9f9f9',
+                      borderLeft: selectedPatient?.patient_id === patient.patient_id ? '4px solid #00b4db' : '4px solid transparent',
                       transition: 'all 0.3s ease',
                     }}
                     onMouseEnter={(e) => {
-                      if (selectedPatient?.id !== patient.id) {
+                      if (selectedPatient?.patient_id !== patient.patient_id) {
                         e.currentTarget.style.backgroundColor = '#f0f0f0';
                       }
                     }}
@@ -248,6 +325,17 @@ const PatientMedicalRecords = () => {
                       />
                     </div>
 
+                    <div className="form-group">
+                      <label>Status</label>
+                      <select
+                        value={newRecord.status}
+                        onChange={(e) => setNewRecord({ ...newRecord, status: e.target.value })}
+                      >
+                        <option value="Ongoing">⏳ Ongoing</option>
+                        <option value="Completed">✅ Completed</option>
+                      </select>
+                    </div>
+
                     <div className="form-actions">
                       <button className="btn btn-primary" onClick={handleAddRecord}>
                         💾 Save Record
@@ -261,12 +349,37 @@ const PatientMedicalRecords = () => {
               )}
 
               <div className="card">
-                <h4 className="card-title">Medical History</h4>
-                {medicalHistory.length === 0 ? (
-                  <p style={{ color: '#999', textAlign: 'center', padding: '20px' }}>No medical records</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h4 className="card-title">📚 Medical History ({filteredHistory.length})</h4>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '4px',
+                        border: '1px solid #ddd',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <option value="all">All Records</option>
+                      <option value="ongoing">Ongoing</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={exportRecords}
+                      style={{ padding: '8px 16px', fontSize: '14px' }}
+                    >
+                      📥 Export
+                    </button>
+                  </div>
+                </div>
+                {filteredHistory.length === 0 ? (
+                  <p style={{ color: '#999', textAlign: 'center', padding: '20px' }}>📭 No medical records</p>
                 ) : (
                   <div>
-                    {medicalHistory.map(record => (
+                    {filteredHistory.map(record => (
                       <div
                         key={record.id}
                         style={{
@@ -277,15 +390,37 @@ const PatientMedicalRecords = () => {
                           backgroundColor: '#f9f9f9',
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                           <div>
                             <h5 style={{ margin: '0 0 5px 0', color: '#333' }}>
                               📋 {record.diagnosis}
                             </h5>
                             <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
-                              {record.date} • Dr. {record.provider}
+                              📅 {record.date} • 👨‍⚕️ Dr. {record.provider}
                             </p>
                           </div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span
+                              style={{
+                                padding: '4px 12px',
+                                borderRadius: '20px',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                backgroundColor: record.status === 'Ongoing' ? '#fff3cd' : '#d4edda',
+                                color: record.status === 'Ongoing' ? '#856404' : '#155724'
+                              }}
+                            >
+                              {record.status === 'Ongoing' ? '⏳ Ongoing' : '✅ Completed'}
+                            </span>
+                            <button
+                              className="btn btn-danger"
+                              onClick={() => handleDeleteRecord(record.id)}
+                              style={{ padding: '4px 8px', fontSize: '12px' }}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </div>
                           <span
                             className={`badge badge-${
                               record.status === 'Ongoing' ? 'success' : 'primary'
