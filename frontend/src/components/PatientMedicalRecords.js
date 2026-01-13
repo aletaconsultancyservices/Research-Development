@@ -13,6 +13,25 @@ import api from '../api';
  * - Status tracking (Ongoing/Completed)
  * - Provider assignment and medication tracking
  */
+const PatientMedicalRecords = () => {
+  const [patients, setPatients] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [medicalHistory, setMedicalHistory] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [showAddRecord, setShowAddRecord] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [message, setMessage] = useState('');
+  const [newRecord, setNewRecord] = useState({
+    date: new Date().toISOString().split('T')[0],
+    diagnosis: '',
+    treatment: '',
+    medications: '',
+    notes: '',
+    provider: '',
+    status: 'Ongoing',
+  });
 
   const fetchPatients = useCallback(async () => {
     try {
