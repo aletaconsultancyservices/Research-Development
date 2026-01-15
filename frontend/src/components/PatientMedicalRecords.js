@@ -13,7 +13,21 @@ import api from '../api';
  * - Status tracking (Ongoing/Completed)
  * - Provider assignment and medication tracking
  */
-const PatientMedicalRecords = () => {
+
+  const fetchPatients = useCallback(async () => {
+    try {
+      const response = await api.get('patients/');
+      setPatients(response.data);
+      console.log(`✅ Loaded ${response.data.length} patients for medical records`);
+      setLoading(false);
+    } catch (error) {
+      console.error('❌ Error fetching patients:', error);
+      setMessage('Failed to load patients');
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {const PatientMedicalRecords = () => {
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [medicalHistory, setMedicalHistory] = useState([]);
@@ -33,20 +47,6 @@ const PatientMedicalRecords = () => {
     status: 'Ongoing',
   });
 
-  const fetchPatients = useCallback(async () => {
-    try {
-      const response = await api.get('patients/');
-      setPatients(response.data);
-      console.log(`✅ Loaded ${response.data.length} patients for medical records`);
-      setLoading(false);
-    } catch (error) {
-      console.error('❌ Error fetching patients:', error);
-      setMessage('Failed to load patients');
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
 
