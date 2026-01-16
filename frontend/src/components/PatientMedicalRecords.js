@@ -58,7 +58,56 @@ import api from '../api';
     console.log(`📋 Selected patient: ${patient.first_name} ${patient.last_name}`);
   };
 
+  const generateMedicalHistory = (patient) => {
+    const conditions = ['Hypertension', 'Diabetes Type 2', 'Asthma', 'GERD', 'Arthritis', 'Migraine', 'Sleep Apnea', 'Obesity'];
+    const treatments = ['Medication', 'Physical Therapy', 'Surgery', 'Lifestyle Changes', 'Monitoring', 'Dietary Management'];
+    const providers = ['Dr. Smith', 'Dr. Johnson', 'Dr. Williams', 'Dr. Brown', 'Dr. Davis', 'Dr. Miller'];
+    
+    return [
+      {
+        id: 1,
+        date: new Date(new Date().setDate(new Date().getDate() - 30)).toLocaleDateString(),
+        diagnosis: conditions[Math.floor(Math.random() * conditions.length)],
+        treatment: treatments[Math.floor(Math.random() * treatments.length)],
+        medications: 'Lisinopril 10mg daily, Metformin 500mg twice daily',
+        provider: providers[Math.floor(Math.random() * providers.length)],
+        notes: 'Patient showing good compliance with treatment plan. Blood pressure stable.',
+        status: 'Ongoing',
+      },
+      {
+        id: 2,
+        date: new Date(new Date().setDate(new Date().getDate() - 60)).toLocaleDateString(),
+        diagnosis: conditions[Math.floor(Math.random() * conditions.length)],
+        treatment: treatments[Math.floor(Math.random() * treatments.length)],
+        medications: 'Ibuprofen 400mg as needed',
+        provider: providers[Math.floor(Math.random() * providers.length)],
+        notes: 'Acute episode managed successfully. Follow-up required in 2 weeks.',
+        status: 'Completed',
+      },
+      {
+        id: 3,
+        date: new Date(new Date().setDate(new Date().getDate() - 90)).toLocaleDateString(),
+        diagnosis: conditions[Math.floor(Math.random() * conditions.length)],
+        treatment: treatments[Math.floor(Math.random() * treatments.length)],
+        medications: 'Albuterol inhaler as needed',
+        provider: providers[Math.floor(Math.random() * providers.length)],
+        notes: 'Preventive care visit. Patient advised to maintain regular exercise.',
+        status: 'Completed',
+      },
+    ];
+  };
 
+  // Filter patients by search term
+  const filteredPatients = patients.filter(patient =>
+    `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(patientSearchTerm.toLowerCase()) ||
+    patient.email.toLowerCase().includes(patientSearchTerm.toLowerCase())
+  );
+
+  // Filter medical history by status
+  const filteredHistory = medicalHistory.filter(record => {
+    if (filterStatus === 'all') return true;
+    return record.status.toLowerCase() === filterStatus.toLowerCase();
+  });
 
   const handleAddRecord = () => {
     if (!selectedPatient) {
