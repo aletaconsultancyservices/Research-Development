@@ -1,6 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
+/**
+ * ReportsAnalytics Component
+ * Comprehensive reporting and analytics dashboard for hospital management
+ * Features:
+ * - Overview dashboard with KPIs
+ * - Appointment metrics and trends
+ * - Staff productivity analysis
+ * - Patient analytics and demographics
+ * - Date range filtering
+ * - CSV and JSON export functionality
+ * - Department-wise statistics
+ * - Monthly trend visualization
+ */
 const ReportsAnalytics = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [reportData, setReportData] = useState({
@@ -32,14 +45,14 @@ const ReportsAnalytics = () => {
     endDate: new Date().toISOString().split('T')[0],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [exportFormat, setExportFormat] = useState('csv');
 
-  useEffect(() => {
-    fetchReportData();
-  }, [dateRange]);
-
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const [patients, doctors, appointments, staff] = await Promise.all([
         api.get('patients/'),
         api.get('doctors/'),
@@ -85,12 +98,19 @@ const ReportsAnalytics = () => {
         departmentStats: generateDepartmentStats(staffList),
         monthlyTrends: generateMonthlyTrends(appointmentsList),
       });
+
+      console.log('✅ Report data loaded successfully');
     } catch (error) {
-      console.error('Error fetching report data:', error);
+      console.error('❌ Error fetching report data:', error);
+      setError('Failed to load analytics data. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchReportData();
+  }, [fetchReportData, dateRange]);
 
   const generateDepartmentStats = (staff) => {
     const departments = {};
@@ -165,7 +185,7 @@ const ReportsAnalytics = () => {
     document.body.removeChild(element);
   };
 
-  if (loading) return <div className="card"><p>Loading analytics...</p></div>;
+  if (loading) return <div className="card"><p>⏳ Loading analytics...</p></div>;
 
   return (
     <div>
@@ -174,9 +194,22 @@ const ReportsAnalytics = () => {
         <p>Comprehensive hospital performance analytics and insights</p>
       </div>
 
+      {error && (
+        <div style={{
+          padding: '12px 16px',
+          marginBottom: '20px',
+          backgroundColor: '#f8d7da',
+          color: '#856404',
+          borderRadius: '6px',
+          borderLeft: '4px solid #ffc107'
+        }}>
+          ⚠️ {error}
+        </div>
+      )}
+
       {/* Date Range Filter */}
       <div className="card" style={{ marginBottom: '20px' }}>
-        <h3 className="card-title">Filter by Date Range</h3>
+        <h3 className="card-title">🗓️ Filter by Date Range</h3>
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
             <label style={{ marginRight: '10px' }}>From:</label>
