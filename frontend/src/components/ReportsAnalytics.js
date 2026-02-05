@@ -251,64 +251,83 @@ const ReportsAnalytics = () => {
         <button
           className={`subtab-btn ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
+          title="View overall metrics and KPIs"
         >
-          Overview
+          📊 Overview
         </button>
         <button
           className={`subtab-btn ${activeTab === 'appointments' ? 'active' : ''}`}
           onClick={() => setActiveTab('appointments')}
+          title="Appointment completion and cancellation rates"
         >
-          Appointments
+          📅 Appointments
         </button>
         <button
           className={`subtab-btn ${activeTab === 'staff' ? 'active' : ''}`}
           onClick={() => setActiveTab('staff')}
+          title="Staff productivity and utilization"
         >
-          Staff
+          👥 Staff
         </button>
         <button
           className={`subtab-btn ${activeTab === 'trends' ? 'active' : ''}`}
           onClick={() => setActiveTab('trends')}
+          title="Monthly trends and historical data"
         >
-          Trends
+          📈 Trends
         </button>
       </div>
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div>
-          <h3 style={{ marginTop: '20px', marginBottom: '20px', color: '#00b4db' }}>
-            Key Metrics Overview
+          <h3 style={{ marginTop: '20px', marginBottom: '20px', color: '#00b4db', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            🎯 Key Metrics Overview
+            <span style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>
+              ({fromDate} to {toDate})
+            </span>
           </h3>
 
           <div className="dashboard-grid">
             <div className="stat-card" style={{ borderLeft: '4px solid #ffc107' }}>
               <div className="stat-label">💰 Total Revenue</div>
               <div className="stat-value">${reportData.totalRevenue.toLocaleString()}</div>
-              <div className="stat-desc">From completed appointments</div>
+              <div className="stat-desc">From {reportData.appointmentMetrics.completed} completed appointments</div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#28a745', fontWeight: '600' }}>
+                ↑ Primary Income Source
+              </div>
             </div>
 
             <div className="stat-card">
               <div className="stat-label">👥 Total Patients</div>
               <div className="stat-value">{reportData.patientMetrics.total}</div>
-              <div className="stat-desc">{reportData.patientMetrics.new} new this period</div>
+              <div className="stat-desc">{reportData.patientMetrics.new} new in this period</div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#0083b0', fontWeight: '600' }}>
+                👤 Growth Active
+              </div>
             </div>
 
             <div className="stat-card">
               <div className="stat-label">👨‍💼 Staff Members</div>
               <div className="stat-value">{reportData.staffMetrics.total}</div>
-              <div className="stat-desc">{reportData.staffMetrics.active} active ({reportData.staffMetrics.productivity}%)</div>
+              <div className="stat-desc">{reportData.staffMetrics.active} active ({reportData.staffMetrics.productivity}% productive)</div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#0083b0', fontWeight: '600' }}>
+                🔥 {reportData.staffMetrics.productivity > 80 ? 'High Productivity' : 'On Track'}
+              </div>
             </div>
 
             <div className="stat-card" style={{ borderLeft: '4px solid #28a745' }}>
               <div className="stat-label">✅ Success Rate</div>
               <div className="stat-value">{reportData.appointmentMetrics.completionRate}%</div>
-              <div className="stat-desc">Appointment completion rate</div>
+              <div className="stat-desc">Overall appointment completion</div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#28a745', fontWeight: '600' }}>
+                {reportData.appointmentMetrics.completionRate >= 80 ? '⭐ Excellent' : '📊 Good'}
+              </div>
             </div>
           </div>
 
-          <h3 style={{ marginTop: '30px', marginBottom: '20px', color: '#00b4db' }}>
-            Financial Summary
+          <h3 style={{ marginTop: '30px', marginBottom: '20px', color: '#00b4db', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            💼 Financial Summary
           </h3>
 
           <div className="card">
@@ -342,6 +361,21 @@ const ReportsAnalytics = () => {
                 </tr>
               </tbody>
             </table>
+            
+            {/* Financial Health Indicator */}
+            <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f9ff', borderRadius: '8px', borderLeft: '4px solid #00b4db' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '5px' }}>💡 Financial Health Score</div>
+                  <div style={{ fontSize: '20px', fontWeight: '700', color: '#00b4db' }}>
+                    {Math.min(100, Math.round((reportData.appointmentMetrics.completionRate * reportData.staffMetrics.productivity) / 100))}%
+                  </div>
+                </div>
+                <div style={{ fontSize: '14px', color: '#666', textAlign: 'right' }}>
+                  Based on completion rate<br/>and staff productivity
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -349,8 +383,8 @@ const ReportsAnalytics = () => {
       {/* Appointments Tab */}
       {activeTab === 'appointments' && (
         <div>
-          <h3 style={{ marginTop: '20px', marginBottom: '20px', color: '#00b4db' }}>
-            Appointment Analytics
+          <h3 style={{ marginTop: '20px', marginBottom: '20px', color: '#00b4db', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            📅 Appointment Analytics
           </h3>
 
           <div className="dashboard-grid">
@@ -423,8 +457,8 @@ const ReportsAnalytics = () => {
       {/* Staff Tab */}
       {activeTab === 'staff' && (
         <div>
-          <h3 style={{ marginTop: '20px', marginBottom: '20px', color: '#00b4db' }}>
-            Staff Performance Metrics
+          <h3 style={{ marginTop: '20px', marginBottom: '20px', color: '#00b4db', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            👥 Staff Performance Metrics
           </h3>
 
           <div className="dashboard-grid">
@@ -477,8 +511,8 @@ const ReportsAnalytics = () => {
       {/* Trends Tab */}
       {activeTab === 'trends' && (
         <div>
-          <h3 style={{ marginTop: '20px', marginBottom: '20px', color: '#00b4db' }}>
-            6-Month Trends
+          <h3 style={{ marginTop: '20px', marginBottom: '20px', color: '#00b4db', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            📈 6-Month Trends & Analysis
           </h3>
 
           <div className="card">
