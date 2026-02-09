@@ -185,10 +185,34 @@ const ReportsAnalytics = () => {
     document.body.removeChild(element);
   };
 
-  if (loading) return <div className="card"><p>⏳ Loading analytics...</p></div>;
+  if (loading) {
+    return (
+      <div className="card">
+        <div style={{ padding: '40px', textAlign: 'center' }}>
+          <p style={{ fontSize: '24px', marginBottom: '20px' }}>⏳ Loading analytics...</p>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #e0e0e0',
+            borderTop: '4px solid #00b4db',
+            borderRadius: '50%',
+            margin: '0 auto',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+      
       <div className="card">
         <h2 className="card-title">📈 Reports & Analytics</h2>
         <p>Comprehensive hospital performance analytics and insights</p>
@@ -207,42 +231,151 @@ const ReportsAnalytics = () => {
         </div>
       )}
 
+      {/* Summary Statistics Banner */}
+      <div className="card" style={{ 
+        marginBottom: '20px', 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        padding: '20px'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+          <div>
+            <div style={{ fontSize: '14px', opacity: '0.9', marginBottom: '5px' }}>💰 Total Revenue</div>
+            <div style={{ fontSize: '28px', fontWeight: '700' }}>${reportData.totalRevenue.toLocaleString()}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '14px', opacity: '0.9', marginBottom: '5px' }}>📊 Total Appointments</div>
+            <div style={{ fontSize: '28px', fontWeight: '700' }}>{reportData.appointmentMetrics.total}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '14px', opacity: '0.9', marginBottom: '5px' }}>👥 Total Patients</div>
+            <div style={{ fontSize: '28px', fontWeight: '700' }}>{reportData.patientMetrics.total}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '14px', opacity: '0.9', marginBottom: '5px' }}>👨‍⚕️ Active Staff</div>
+            <div style={{ fontSize: '28px', fontWeight: '700' }}>{reportData.staffMetrics.active}/{reportData.staffMetrics.total}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Date Range Filter */}
       <div className="card" style={{ marginBottom: '20px' }}>
         <h3 className="card-title">🗓️ Filter by Date Range</h3>
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
-            <label style={{ marginRight: '10px' }}>From:</label>
+            <label style={{ marginRight: '10px', display: 'block', marginBottom: '5px', fontWeight: '600', fontSize: '14px' }}>
+              📅 From:
+            </label>
             <input
               type="date"
               value={dateRange.startDate}
+              max={dateRange.endDate}
               onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+              style={{ 
+                padding: '8px 12px', 
+                borderRadius: '4px', 
+                border: '1px solid #00b4db',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
             />
           </div>
           <div>
-            <label style={{ marginRight: '10px' }}>To:</label>
+            <label style={{ marginRight: '10px', display: 'block', marginBottom: '5px', fontWeight: '600', fontSize: '14px' }}>
+              📅 To:
+            </label>
             <input
               type="date"
               value={dateRange.endDate}
+              min={dateRange.startDate}
+              max={new Date().toISOString().split('T')[0]}
               onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+              style={{ 
+                padding: '8px 12px', 
+                borderRadius: '4px', 
+                border: '1px solid #00b4db',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
             />
           </div>
-          <div>
-            <label style={{ marginRight: '10px' }}>Export As:</label>
-            <select
-              value={exportFormat}
-              onChange={(e) => setExportFormat(e.target.value)}
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-            >
-              <option value="csv">CSV</option>
-              <option value="json">JSON</option>
-            </select>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div>
+              <label style={{ marginRight: '10px', display: 'block', marginBottom: '5px', fontWeight: '600', fontSize: '14px' }}>
+                📥 Export As:
+              </label>
+              <select
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value)}
+                style={{ 
+                  padding: '8px 12px', 
+                  borderRadius: '4px', 
+                  border: '1px solid #00b4db',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="csv">📄 CSV</option>
+                <option value="json">📋 JSON</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleExport}
+                style={{ marginTop: '2px' }}
+              >
+                ⬇️ Export Report
+              </button>
+            </div>
           </div>
-          <button className="btn btn-primary" onClick={handleExport}>
-            ⬇️ Export Report
-          </button>
+        </div>
+        <div style={{ marginTop: '12px', fontSize: '12px', color: '#666' }}>
+          📍 Showing data from <strong>{dateRange.startDate}</strong> to <strong>{dateRange.endDate}</strong>
+        </div>
+      </div>
+
+      {/* Performance Status Section */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+        <div className="card" style={{ padding: '16px', border: reportData.appointmentMetrics.completionRate >= 85 ? '2px solid #28a745' : '2px solid #ffc107' }}>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>🎯 Appointment Performance</div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: reportData.appointmentMetrics.completionRate >= 85 ? '#28a745' : '#ffc107' }}>
+            {reportData.appointmentMetrics.completionRate}%
+          </div>
+          <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+            {reportData.appointmentMetrics.completionRate >= 85 ? '✅ Excellent' : '⚠️ Needs Attention'}
+          </div>
+        </div>
+        
+        <div className="card" style={{ padding: '16px', border: reportData.staffMetrics.productivity >= 80 ? '2px solid #28a745' : '2px solid #ffc107' }}>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>🔥 Staff Productivity</div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: reportData.staffMetrics.productivity >= 80 ? '#28a745' : '#ffc107' }}>
+            {reportData.staffMetrics.productivity}%
+          </div>
+          <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+            {reportData.staffMetrics.productivity >= 80 ? '✅ High Performance' : '⚠️ Monitor'}
+          </div>
+        </div>
+        
+        <div className="card" style={{ padding: '16px', borderLeft: '4px solid #00b4db' }}>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>💳 Revenue Status</div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#00b4db' }}>
+            ${(reportData.totalRevenue / 1000).toFixed(1)}K
+          </div>
+          <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+            {reportData.appointmentMetrics.completed} completed
+          </div>
+        </div>
+        
+        <div className="card" style={{ padding: '16px', borderLeft: '4px solid #667eea' }}>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>🏥 Patient Growth</div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#667eea' }}>
+            {reportData.patientMetrics.new}
+          </div>
+          <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+            new patients
+          </div>
         </div>
       </div>
 
