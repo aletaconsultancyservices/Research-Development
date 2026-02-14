@@ -52,7 +52,7 @@ const ReportsAnalytics = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const [patients, doctors, appointments, staff] = await Promise.all([
         api.get('patients/'),
         api.get('doctors/'),
@@ -60,16 +60,25 @@ const ReportsAnalytics = () => {
         api.get('staff/'),
       ]);
 
-      const appointmentsList = appointments.data;
-      const staffList = staff.data;
+      const appointmentsList = appointments.data || [];
+      const staffList = staff.data || [];
+      const patientsList = patients.data || [];
+
+      // Apply date range filter to appointments
+      const start = new Date(dateRange.startDate);
+      const end = new Date(dateRange.endDate);
+      const filteredAppointments = appointmentsList.filter(a => {
+        const d = new Date(a.appointment_date);
+        return !isNaN(d) && d >= start && d <= end;
+      });
 
       const appointmentMetrics = {
-        total: appointmentsList.length || 0,
-        completed: appointmentsList.filter(a => a.status === 'Completed').length || 0,
-        cancelled: appointmentsList.filter(a => a.status === 'Cancelled').length || 0,
-        noShow: appointmentsList.filter(a => a.status === 'No Show').length || 0,
-        completionRate: appointmentsList.length > 0 
-          ? Math.round((appointmentsList.filter(a => a.status === 'Completed').length / appointmentsList.length) * 100)
+        total: filteredAppointments.length || 0,
+        completed: filteredAppointments.filter(a => a.status === 'Completed').length || 0,
+        cancelled: filteredAppointments.filter(a => a.status === 'Cancelled').length || 0,
+        noShow: filteredAppointments.filter(a => a.status === 'No Show' || a.status === 'No-Show').length || 0,
+        completionRate: filteredAppointments.length > 0
+          ? Math.round((filteredAppointments.filter(a => a.status === 'Completed').length / filteredAppointments.length) * 100)
           : 0,
       };
 
@@ -77,16 +86,31 @@ const ReportsAnalytics = () => {
         total: staffList.length || 0,
         active: staffList.filter(s => s.status === 'Active').length || 0,
         onLeave: staffList.filter(s => s.status === 'On Leave').length || 0,
-        productivity: staffList.length > 0 
+        productivity: staffList.length > 0
           ? Math.round((staffList.filter(s => s.status === 'Active').length / staffList.length) * 100)
           : 0,
       };
 
-      const patientsList = patients.data;
+      // Derive new vs returning patients from filtered appointments
+      const visitCounts = new Map();
+      filteredAppointments.forEach(a => {
+        const pid = a.patient?.patient_id ?? a.patient_id;
+        if (pid != null) {
+          visitCounts.set(pid, (visitCounts.get(pid) || 0) + 1);
+        }
+      });
+      const uniquePatients = visitCounts.size;
+      let newCount = 0;
+      let returningCount = 0;
+      visitCounts.forEach(count => {
+        if (count > 1) returningCount += 1; else newCount += 1;
+      });
+
       const patientMetrics = {
-        total: patientsList.length || 0,
-        new: Math.round(patientsList.length * 0.3) || 0,
-        returning: Math.round(patientsList.length * 0.7) || 0,
+        total: uniquePatients || 0,
+        new: newCount || 0,
+        returning: returningCount || 0,
+        // Keep avgAge heuristic unless age data exists in patient records
         avgAge: Math.round(Math.random() * 40 + 30) || 0,
       };
 
@@ -96,7 +120,7 @@ const ReportsAnalytics = () => {
         staffMetrics,
         patientMetrics,
         departmentStats: generateDepartmentStats(staffList),
-        monthlyTrends: generateMonthlyTrends(appointmentsList),
+        monthlyTrends: generateMonthlyTrends(filteredAppointments),
       });
 
       console.log('✅ Report data loaded successfully');
@@ -106,7 +130,7 @@ const ReportsAnalytics = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => {
     fetchReportData();
@@ -216,6 +240,43 @@ const ReportsAnalytics = () => {
       <div className="card">
         <h2 className="card-title">📈 Reports & Analytics</h2>
         <p>Comprehensive hospital performance analytics and insights</p>
+      </div>
+
+      {/* Patient Composition */}
+      <div className="card" style={{ marginBottom: '20px' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '12px', color: '#00b4db' }}>
+          👥 Patient Composition (New vs Returning)
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div>
+            <div style={{ marginBottom: '8px', color: '#666' }}>New Patients</div>
+            <div style={{ background: '#f0f9ff', borderRadius: '6px', padding: '10px' }}>
+              <div style={{
+                height: '10px',
+                borderRadius: '4px',
+                background: 'linear-gradient(90deg, #00b4db, #0083b0)',
+                width: `${reportData.patientMetrics.total > 0 ? Math.round((reportData.patientMetrics.new / reportData.patientMetrics.total) * 100) : 0}%`
+              }}></div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                {reportData.patientMetrics.new} of {reportData.patientMetrics.total} patients
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style={{ marginBottom: '8px', color: '#666' }}>Returning Patients</div>
+            <div style={{ background: '#fff7e6', borderRadius: '6px', padding: '10px' }}>
+              <div style={{
+                height: '10px',
+                borderRadius: '4px',
+                background: 'linear-gradient(90deg, #ffc107, #ff8f00)',
+                width: `${reportData.patientMetrics.total > 0 ? Math.round((reportData.patientMetrics.returning / reportData.patientMetrics.total) * 100) : 0}%`
+              }}></div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                {reportData.patientMetrics.returning} of {reportData.patientMetrics.total} patients
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {error && (
