@@ -136,6 +136,42 @@ const StaffManagement = () => {
   const onLeaveCount = staff.filter(s => s.status === 'On Leave').length;
   const inactiveCount = staff.filter(s => s.status === 'Inactive' || s.status === 'Terminated').length;
 
+  // Export filtered staff as CSV
+  const generateStaffCSV = () => {
+    const headers = ['Name','Position','Department','Email','Phone','Hire Date','Salary','Status'];
+    const rows = filteredStaff.map(item => [
+      item.name,
+      item.position,
+      item.department,
+      item.email,
+      item.phone,
+      new Date(item.hire_date).toLocaleDateString(),
+      item.salary,
+      item.status,
+    ]);
+    const csvCore = [headers, ...rows]
+      .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const header = `Staff Directory (filtered)\nGenerated: ${new Date().toLocaleString()}\n\n`;
+    return header + csvCore;
+  };
+
+  const downloadFile = (content, filename, type) => {
+    const element = document.createElement('a');
+    element.setAttribute('href', `data:${type};charset=utf-8,${encodeURIComponent(content)}`);
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const handleExportCSV = () => {
+    const csv = generateStaffCSV();
+    const ts = new Date().toISOString().split('T')[0];
+    downloadFile(csv, `staff_directory_${ts}.csv`, 'text/csv');
+  };
+
   if (loading) return <div className="card"><p>Loading staff data...</p></div>;
 
   return (
@@ -173,7 +209,7 @@ const StaffManagement = () => {
         </div>
       )}
 
-      <div className="management-header">
+      <div className="management-header" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', width: '100%' }}>
           <input
             type="text"
@@ -194,12 +230,21 @@ const StaffManagement = () => {
             <option value="Terminated">Terminated</option>
           </select>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? '✕ Cancel' : '+ Add Staff Member'}
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? '✕ Cancel' : '+ Add Staff Member'}
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleExportCSV}
+            title="Export filtered staff to CSV"
+          >
+            ⬇️ Export CSV
+          </button>
+        </div>
       </div>
 
       {showForm && (
