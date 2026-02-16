@@ -172,6 +172,26 @@ const StaffManagement = () => {
     downloadFile(csv, `staff_directory_${ts}.csv`, 'text/csv');
   };
 
+  const handleExportJSON = () => {
+    const ts = new Date().toISOString().split('T')[0];
+    const payload = filteredStaff.map(item => ({
+      name: item.name,
+      position: item.position,
+      department: item.department,
+      email: item.email,
+      phone: item.phone,
+      hire_date: item.hire_date,
+      salary: item.salary,
+      status: item.status,
+    }));
+    const bundle = {
+      generated: new Date().toISOString(),
+      total: payload.length,
+      items: payload,
+    };
+    downloadFile(JSON.stringify(bundle, null, 2), `staff_directory_${ts}.json`, 'application/json');
+  };
+
   if (loading) return <div className="card"><p>Loading staff data...</p></div>;
 
   return (
@@ -243,6 +263,13 @@ const StaffManagement = () => {
             title="Export filtered staff to CSV"
           >
             ⬇️ Export CSV
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleExportJSON}
+            title="Export filtered staff to JSON"
+          >
+            ⬇️ Export JSON
           </button>
         </div>
       </div>
