@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
 const StaffManagement = () => {
@@ -8,6 +8,8 @@ const StaffManagement = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     position: '',
@@ -19,21 +21,22 @@ const StaffManagement = () => {
     status: 'Active',
   });
 
-  useEffect(() => {
-    fetchStaff();
-  }, []);
-
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
     try {
       const response = await api.get('staff/');
-      setStaff(response.data);
+      setStaff(response.data || []);
       setLoading(false);
+      console.log('✅ Staff data loaded successfully');
     } catch (error) {
-      console.error('Error fetching staff:', error);
+      console.error('❌ Error fetching staff:', error);
       setMessage('Error loading staff data');
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchStaff();
+  }, [fetchStaff]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,24 +44,44 @@ const StaffManagement = () => {
       ...prev,
       [name]: value
     }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name || formData.name.trim().length < 3) newErrors.name = 'Full name must be at least 3 characters';
+    if (!formData.position) newErrors.position = 'Position is required';
+    if (!formData.department) newErrors.department = 'Department is required';
+    if (!formData.email || !/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Valid email is required';
+    if (!formData.phone || formData.phone.trim().length < 7) newErrors.phone = 'Valid phone is required';
+    if (!formData.hire_date) newErrors.hire_date = 'Hire date is required';
+    if (!formData.salary || Number(formData.salary) <= 0) newErrors.salary = 'Salary must be greater than 0';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) {
+      setMessage('❌ Please fix the errors in the form');
+      return;
+    }
     try {
       if (editingId) {
         await api.put(`staff/${editingId}/`, formData);
-        setMessage('Staff member updated successfully');
+        setMessage('✅ Staff member updated successfully');
       } else {
         await api.post('staff/', formData);
-        setMessage('Staff member added successfully');
+        setMessage('✅ Staff member added successfully');
       }
       resetForm();
       fetchStaff();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Error:', error);
-      setMessage(error.response?.data?.detail || 'Error saving staff data');
+      setMessage(error.response?.data?.detail || '❌ Error saving staff data');
     }
   };
 
@@ -97,11 +120,21 @@ const StaffManagement = () => {
     setShowForm(false);
   };
 
-  const filteredStaff = staff.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStaff = staff.filter(item => {
+    const matchesText = (
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.department.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
+    return matchesText && matchesStatus;
+  });
+
+  // Summary counts
+  const totalStaff = staff.length;
+  const activeCount = staff.filter(s => s.status === 'Active').length;
+  const onLeaveCount = staff.filter(s => s.status === 'On Leave').length;
+  const inactiveCount = staff.filter(s => s.status === 'Inactive' || s.status === 'Terminated').length;
 
   if (loading) return <div className="card"><p>Loading staff data...</p></div>;
 
@@ -112,6 +145,28 @@ const StaffManagement = () => {
         <p>Manage hospital staff members, positions, and schedules</p>
       </div>
 
+      {/* Summary Banner */}
+      <div className="card" style={{ marginBottom: '20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+          <div>
+            <div style={{ fontSize: '12px', opacity: 0.9 }}>👥 Total Staff</div>
+            <div style={{ fontSize: '24px', fontWeight: 700 }}>{totalStaff}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', opacity: 0.9 }}>✅ Active</div>
+            <div style={{ fontSize: '24px', fontWeight: 700 }}>{activeCount}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', opacity: 0.9 }}>📅 On Leave</div>
+            <div style={{ fontSize: '24px', fontWeight: 700 }}>{onLeaveCount}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', opacity: 0.9 }}>⛔ Inactive/Terminated</div>
+            <div style={{ fontSize: '24px', fontWeight: 700 }}>{inactiveCount}</div>
+          </div>
+        </div>
+      </div>
+
       {message && (
         <div className={`alert ${message.includes('Error') ? 'alert-danger' : 'alert-success'}`}>
           {message}
@@ -119,13 +174,26 @@ const StaffManagement = () => {
       )}
 
       <div className="management-header">
-        <input
-          type="text"
-          placeholder="Search by name, position, or department..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', width: '100%' }}>
+          <input
+            type="text"
+            placeholder="Search by name, position, or department..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="search-input"
+          >
+            <option value="All">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="On Leave">On Leave</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Terminated">Terminated</option>
+          </select>
+        </div>
         <button
           className="btn btn-primary"
           onClick={() => setShowForm(!showForm)}
@@ -149,6 +217,7 @@ const StaffManagement = () => {
                   placeholder="Enter full name"
                   required
                 />
+                {errors.name && <span style={{ color: '#dc3545', fontSize: '12px' }}>{errors.name}</span>}
               </div>
               <div className="form-group">
                 <label>Position *</label>
@@ -167,6 +236,7 @@ const StaffManagement = () => {
                   <option value="Manager">Department Manager</option>
                   <option value="Other">Other</option>
                 </select>
+                {errors.position && <span style={{ color: '#dc3545', fontSize: '12px' }}>{errors.position}</span>}
               </div>
             </div>
 
@@ -189,6 +259,7 @@ const StaffManagement = () => {
                   <option value="Administration">Administration</option>
                   <option value="Maintenance">Maintenance</option>
                 </select>
+                {errors.department && <span style={{ color: '#dc3545', fontSize: '12px' }}>{errors.department}</span>}
               </div>
               <div className="form-group">
                 <label>Email *</label>
@@ -200,6 +271,7 @@ const StaffManagement = () => {
                   placeholder="Enter email address"
                   required
                 />
+                {errors.email && <span style={{ color: '#dc3545', fontSize: '12px' }}>{errors.email}</span>}
               </div>
             </div>
 
@@ -214,6 +286,7 @@ const StaffManagement = () => {
                   placeholder="Enter phone number"
                   required
                 />
+                {errors.phone && <span style={{ color: '#dc3545', fontSize: '12px' }}>{errors.phone}</span>}
               </div>
               <div className="form-group">
                 <label>Hire Date *</label>
@@ -224,6 +297,7 @@ const StaffManagement = () => {
                   onChange={handleChange}
                   required
                 />
+                {errors.hire_date && <span style={{ color: '#dc3545', fontSize: '12px' }}>{errors.hire_date}</span>}
               </div>
             </div>
 
@@ -239,6 +313,7 @@ const StaffManagement = () => {
                   step="0.01"
                   required
                 />
+                {errors.salary && <span style={{ color: '#dc3545', fontSize: '12px' }}>{errors.salary}</span>}
               </div>
               <div className="form-group">
                 <label>Status *</label>
