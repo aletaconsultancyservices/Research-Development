@@ -16,6 +16,7 @@
                                   */
                                   const ReportsAnalytics = () => {
                                     const [activeTab, setActiveTab] = useState('overview');
+                                    const [lastUpdated, setLastUpdated] = useState(new Date());
                                     const [reportData, setReportData] = useState({
                                       totalRevenue: 0,
                                       appointmentMetrics: {
@@ -52,6 +53,7 @@
                                       try {
                                         setLoading(true);
                                         setError(null);
+                                        setLastUpdated(new Date());
 
                                         const [patients, doctors, appointments, staff] = await Promise.all([
                                           api.get('patients/'),
@@ -240,6 +242,9 @@
                                         <div className="card">
                                           <h2 className="card-title">📈 Reports & Analytics</h2>
                                           <p>Comprehensive hospital performance analytics and insights</p>
+                                          <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                                            Last updated: {lastUpdated.toLocaleString()}
+                                          </div>
                                         </div>
 
                                         {/* Patient Composition */}
@@ -750,6 +755,11 @@
                                             </div>
                                           </div>
                                         )}
+
+                                        {/* Footer */}
+                                        <div style={{ marginTop: '40px', textAlign: 'center', color: '#aaa', fontSize: '13px', letterSpacing: '0.5px' }}>
+                                          Powered by <span style={{ color: '#764ba2', fontWeight: 600 }}>Hospital Management System</span>
+                                        </div>
                                       </div>
                                     );
                                   };
