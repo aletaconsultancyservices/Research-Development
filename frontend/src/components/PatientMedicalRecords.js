@@ -1,3 +1,18 @@
+import React from 'react';
+
+const PatientMedicalRecords = () => {
+  return (
+    <div className="card">
+      <h2 className="card-title">🩺 Patient Medical Records</h2>
+      <p>View and manage patient medical history, diagnoses, and treatments.</p>
+      <div style={{ marginTop: '20px', color: '#888' }}>
+        <em>Medical records functionality coming soon...</em>
+      </div>
+    </div>
+  );
+};
+
+export default PatientMedicalRecords;
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
@@ -48,7 +63,7 @@ import api from '../api';
   });
 
     fetchPatients();
-  }, [fetchPatients]);
+  }, [fetchPatients] )      ;
 
   const handleSelectPatient = (patient) => {
     setSelectedPatient(patient);
