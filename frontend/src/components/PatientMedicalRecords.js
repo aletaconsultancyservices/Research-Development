@@ -8,6 +8,35 @@ const PatientMedicalRecords = () => {
       <div style={{ marginTop: '20px', color: '#888' }}>
         <em>Medical records functionality coming soon...</em>
       </div>
+
+      {/* Recent Visits Section */}
+      <div style={{ marginTop: '32px' }}>
+        <h3 style={{ color: '#764ba2', marginBottom: '12px' }}>Recent Visits</h3>
+        <table className="data-table" style={{ width: '100%', background: '#f8f9fa', borderRadius: '6px' }}>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Doctor</th>
+              <th>Reason</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2026-02-15</td>
+              <td>Dr. Smith</td>
+              <td>General Checkup</td>
+              <td><span style={{ color: '#28a745', fontWeight: 600 }}>Completed</span></td>
+            </tr>
+            <tr>
+              <td>2026-01-30</td>
+              <td>Dr. Lee</td>
+              <td>Follow-up</td>
+              <td><span style={{ color: '#ffc107', fontWeight: 600 }}>Scheduled</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
