@@ -37,6 +37,35 @@ const PatientMedicalRecords = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Medications Section */}
+      <div style={{ marginTop: '32px' }}>
+        <h3 style={{ color: '#00b4db', marginBottom: '12px' }}>Medications</h3>
+        <table className="data-table" style={{ width: '100%', background: '#f0f9ff', borderRadius: '6px' }}>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Dosage</th>
+              <th>Frequency</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Paracetamol</td>
+              <td>500mg</td>
+              <td>Twice daily</td>
+              <td><span style={{ color: '#28a745', fontWeight: 600 }}>Active</span></td>
+            </tr>
+            <tr>
+              <td>Amoxicillin</td>
+              <td>250mg</td>
+              <td>Three times daily</td>
+              <td><span style={{ color: '#aaa', fontWeight: 600 }}>Completed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
